@@ -38,3 +38,4 @@ tiktoken
 langchain-community
 pysqlite3-binary==0.5.3
 audio_recorder_streamlit
+pytz
