@@ -799,7 +799,7 @@ def main():
 
 
     elif feature == "**Nutritional Analyst**":
-        st.header("🍏 Unlock the secrets to healthier eating with **Chef Mate**!👨‍🍳 Analyze your ingredients and dishes for detailed nutritional insights, track calorie intake, and make every bite count towards a balanced diet. Your journey to mindful eating starts here!")
+        st.header("🍏 Unlocking the secrets to healthier eating with **Chef Mate**!👨‍🍳 Analyze your ingredients and dishes for detailed nutritional insights, track calorie intake, and make every bite count towards a balanced diet. Your journey to mindful eating starts here!")
         input = st.text_input("Share additional information if you have", key="input")
         uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
         image = ""   
