@@ -2,3 +2,4 @@ streamlit
 openai
 pydub
 audio_recorder_streamlit
+pysqlite3
