@@ -5,7 +5,7 @@ import os
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
 # from langchain_chroma import Chroma
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 
 from langchain.chains import ConversationalRetrievalChain
 from dotenv import load_dotenv
