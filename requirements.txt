@@ -19,7 +19,7 @@ arxiv
 pymupdf
 wikipedia
 langchain-text-splitters
-chromadb>=0.3.22
+chromadb
 sentence_transformers
 langchain_huggingface
 langchain_chroma
