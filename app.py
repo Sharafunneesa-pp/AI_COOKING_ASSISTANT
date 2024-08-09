@@ -166,8 +166,14 @@ def user_input(user_question):
         yield f"Sorry, something went wrong. Please try again later. Error: {str(e)}"
 
 
+def get_indian_time():
+    india_tz = pytz.timezone('Asia/Kolkata')
+    return datetime.datetime.now(india_tz)
+
+
 def get_greeting():
-    current_hour = datetime.datetime.now().hour
+    current_time = get_indian_time()
+    current_hour = current_time.hour
     if current_hour < 12:
         return "Good morning! How can I help you with making breakfast?"
     elif 12 <= current_hour < 16:
@@ -176,6 +182,22 @@ def get_greeting():
         return "Good evening! Are you planning to prepare some snacks?"
     else:
         return "Hey... How can I help you prepare for dinner?"
+
+
+
+
+
+
+# def get_greeting():
+#     current_hour = datetime.datetime.now().hour
+#     if current_hour < 12:
+#         return "Good morning! How can I help you with making breakfast?"
+#     elif 12 <= current_hour < 16:
+#         return "Good afternoon! How can I assist you today with lunch?"
+#     elif 16 <= current_hour < 18:
+#         return "Good evening! Are you planning to prepare some snacks?"
+#     else:
+#         return "Hey... How can I help you prepare for dinner?"
 
 def format_response(response):
     response = response.replace(' - ', ': ').replace('•', '*')
