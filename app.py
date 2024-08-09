@@ -800,56 +800,80 @@ def main():
 
     elif feature == "**Nutritional Analyst**":
         st.header("🍏 Unlock the secrets to healthier eating with **Chef Mate**!👨‍🍳 Analyze your ingredients and dishes for detailed nutritional insights, track calorie intake, and make every bite count towards a balanced diet. Your journey to mindful eating starts here!")
-        input=st.text_input(" Share additional informations if you have ",key="input")
+        input = st.text_input("Share additional information if you have", key="input")
         uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-        image=""   
+        image = ""   
         if uploaded_file is not None:
             image = Image.open(uploaded_file)
             st.image(image, caption="Uploaded Image.", use_column_width=True)   
-        submit=st.button(" Find Total Calories")
+        submit = st.button("Find Total Calories")
 
-        input_prompt="""
-        You are an expert in nutritionist where you need to see the food items from the image
-                    provide the details of every food items with calories intake and calculate the total calories of entire food,
-                    if the image provide is not having food, say "i am expecting only food related images to provide nutritional information"
-                    in this format
+        input_prompt = """
+    You are a highly skilled nutritionist. You have an image of a meal, and you need to analyze the food items present in the image. For each item, provide the following information:
+    1. Name of the food item
+    2. Estimated calories
+    3. Other nutritional details (if possible)
 
-                    1. Item 1 - no of calories
-                    2. Item 2 - no of calories
-                    ----
-                    ----
+    Before providing the analysis, ensure or confirm the accuracy and quantity of the food items mentioned in the input. If the input is too general (e.g., "chicken" or "beef"), ask for more accurate details, such as the quantity and specific type (e.g., "100g grilled chicken breast").
 
-        """
+    Once the details are confirmed, calculate the total calories of the entire meal and present it in the following format:
+
+    Itemized Nutritional Breakdown:
+    1. [Food Item 1] - [Calories] calories
+    2. [Food Item 2] - [Calories] calories
+    ...
+    n. [Food Item n] - [Calories] calories
+
+    Total Calories: [Total Calories] calories
+
+    Example:
+    Itemized Nutritional Breakdown:
+    1. Apple - 95 calories
+    2. Chicken Breast - 165 calories
+    3. Broccoli - 55 calories
+
+    Total Calories: 315 calories
+
+    Make sure to provide accurate and detailed information.
+    """
+
+
         if submit:
-            image_data=input_image_setup(uploaded_file)
-            response=gemini_repsonse(input_prompt,image_data,input)
-             # Add CSS for better styling
-            st.markdown("""
-                <style>
-                    .response {
-                        font-family: Arial, sans-serif;
-                        background-color: #f9f9f9;
-                        padding: 20px;
-                        border-radius: 10px;
-                        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-                    }
-                    .response h4 {
-                        color: #007bff;
-                    }
-                    .response p {
-                        color: #333;
-                    }
-                </style>
-            """, unsafe_allow_html=True)
-    
-            # Format the response
-            formatted_response = f"""
-            <div class="response">
-                <h4>Total Calories Calculation</h4>
-                <p>{response}</p>
-            </div>
-            """
-            st.markdown(formatted_response, unsafe_allow_html=True)
+            if uploaded_file is not None:
+                try:
+                    image_data = input_image_setup(uploaded_file)
+                    response = gemini_repsonse(input, image_data, input_prompt)
+                    # Add CSS for better styling
+                    st.markdown("""
+                        <style>
+                            .response {
+                                font-family: Arial, sans-serif;
+                                background-color: #f9f9f9;
+                                padding: 20px;
+                                border-radius: 10px;
+                                box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+                            }
+                            .response h4 {
+                                color: #007bff;
+                            }
+                            .response p {
+                                color: #333;
+                            }
+                        </style>
+                    """, unsafe_allow_html=True)
+
+                    # Format the response
+                    formatted_response = f"""
+                    <div class="response">
+                        <h4>Total Calories Calculation</h4>
+                        <p>{response}</p>
+                    </div>
+                    """
+                    st.markdown(formatted_response, unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"Error processing the image: {e}")
+            else:
+                st.error("No file uploaded. Please upload an image to get the nutritional analysis.")
             
 
     elif feature == "**Recipe Recommendations**":
