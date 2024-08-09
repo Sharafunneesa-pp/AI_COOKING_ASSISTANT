@@ -29,15 +29,27 @@ from langchain_community.document_loaders import  WebBaseLoader
 from audio_recorder_streamlit import audio_recorder
 
 
-load_dotenv()
-OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
-GENAI_API_KEY = os.getenv('GENAI_API_KEY')
-GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+# Access API keys from st.secrets
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+GENAI_API_KEY = st.secrets["GENAI_API_KEY"]
+GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 
+# Configure your clients using the secrets
 genai.configure(api_key=GENAI_API_KEY)
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
+genai.configure(api_key=GOOGLE_API_KEY)
 groq_client = Groq(api_key=GROQ_API_KEY)
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+# load_dotenv()
+# OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
+# GENAI_API_KEY = os.getenv('GENAI_API_KEY')
+# GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+
+# genai.configure(api_key=GENAI_API_KEY)
+# openai_client = OpenAI(api_key=OPENAI_API_KEY)
+# groq_client = Groq(api_key=GROQ_API_KEY)
+# genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 
 llm = ChatOpenAI(api_key=OPENAI_API_KEY, temperature=0.0, max_tokens=3000)
