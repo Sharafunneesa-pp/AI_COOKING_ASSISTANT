@@ -230,7 +230,7 @@ if "current_chat" not in st.session_state:
 def fetch_ai_response(client, input_text):
     try:
         st.session_state.messages.append({"role": "user", "content": input_text})
-        chat_completion = client.chat.completions.create(model="gpt-3.5-turbo-1106", messages=st.session_state.messages)
+        chat_completion = client.chat.completions.create(model="gpt-4o-mini", messages=st.session_state.messages)
         response = chat_completion.choices[0].message
         st.session_state.messages.append(response)
         return response.content
