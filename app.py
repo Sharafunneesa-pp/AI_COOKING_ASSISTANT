@@ -1,3 +1,7 @@
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+import datetime
 import os
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
@@ -7,7 +11,7 @@ from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain.prompts import PromptTemplate
 import bs4
-import datetime
+
 import regex as re
 from langchain.callbacks import StreamingStdOutCallbackHandler
 import logging
@@ -16,6 +20,7 @@ from openai import OpenAI
 from faster_whisper import WhisperModel
 import speech_recognition as sr
 import google.generativeai as genai
+import pyaudio
 import time
 from langchain_openai import OpenAIEmbeddings
 from langchain.chains.question_answering import load_qa_chain
@@ -25,8 +30,11 @@ import base64
 import streamlit as st
 import sys
 from groq import Groq
-from langchain_community.document_loaders import  WebBaseLoader
-from audio_recorder_streamlit import audio_recorder
+from langchain_community.document_loaders import ArxivLoader, WebBaseLoader
+import pytz
+
+
+
 
 
 # Access API keys from st.secrets
@@ -40,18 +48,6 @@ genai.configure(api_key=GENAI_API_KEY)
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 genai.configure(api_key=GOOGLE_API_KEY)
 groq_client = Groq(api_key=GROQ_API_KEY)
-
-# load_dotenv()
-# OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
-# GENAI_API_KEY = os.getenv('GENAI_API_KEY')
-# GROQ_API_KEY = os.getenv('GROQ_API_KEY')
-
-# genai.configure(api_key=GENAI_API_KEY)
-# openai_client = OpenAI(api_key=OPENAI_API_KEY)
-# groq_client = Groq(api_key=GROQ_API_KEY)
-# genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-
-
 llm = ChatOpenAI(api_key=OPENAI_API_KEY, temperature=0.0, max_tokens=3000)
 
 
@@ -172,9 +168,15 @@ def user_input(user_question):
         logging.error(f"Error in user_input function: {e}")
         yield f"Sorry, something went wrong. Please try again later. Error: {str(e)}"
 
+ 
+def get_indian_time():
+    india_tz = pytz.timezone('Asia/Kolkata')
+    return datetime.datetime.now(india_tz)
+
 
 def get_greeting():
-    current_hour = datetime.datetime.now().hour
+    current_time = get_indian_time()
+    current_hour = current_time.hour
     if current_hour < 12:
         return "Good morning! How can I help you with making breakfast?"
     elif 12 <= current_hour < 16:
@@ -183,6 +185,7 @@ def get_greeting():
         return "Good evening! Are you planning to prepare some snacks?"
     else:
         return "Hey... How can I help you prepare for dinner?"
+
 
 def format_response(response):
     response = response.replace(' - ', ': ').replace('•', '*')
@@ -193,165 +196,110 @@ def format_response(response):
 
 # VOICE ASSISTANT 
 
-def setup_openai_client(api_key):
-    try:
-        return OpenAI(api_key=api_key)
-    except Exception as e:
-        st.error(f"Error setting up OpenAI client: {str(e)}")
-        return None
+#Define wake word
+# wake_word = "chef"  
 
-def transcribe_audio(client, audio_path):
-    try:
-        if client is None:
-            raise ValueError("OpenAI client is not initialized")
-        
-        with open(audio_path, "rb") as audio_file:
-            response = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file
-            )
-            if 'text' in response:
-                return response['text']
-            elif hasattr(response, 'text'):
-                return response.text
-            else:
-                return 'Transcription text not found'
-    except Exception as e:
-        st.error(f" Your audio is too short.")
-        return None
+# num_cores = os.cpu_count()
+# whisper_size = 'base'
+# whisper_model = WhisperModel(
+#     whisper_size,
+#     device='cpu',
+#     compute_type='int8',
+#     cpu_threads=num_cores // 2,
+#     num_workers=num_cores // 2
+# )
+
+# r = sr.Recognizer()
+# source = sr.Microphone()
+# sys_msg = ( 'you are a multimodal AI voice assistant. Your user may request assistance for cooking '
+#     ' Generate the most useful and stop after first instruction and say once you completed this let me know and continue after user response '
+#     'factual response possible, carefully considering all previous generated text in your response before '
+#     'adding new tokens to the response.  just use the context if added. '
+#     'Use all of the context of this conversation so your response is relevant to the conversation. Make '
+#     'your responses clear and concise, avoiding any verbosity.')
+
+# convo = [{'role': 'system', 'content': sys_msg}]
 
 
-sys_msg = (
-    "You are Chef Mate, a sophisticated AI cooking voice assistant. Your primary role is to offer detailed, step-by-step cooking assistance. Here are the key guidelines for your responses:\n\n"
-    "1. **Context Awareness:** Always consider the entire conversation history. Use this context to tailor your responses and maintain continuity in the guidance you provide.\n\n"
-    "2. **Confirmation of Preferences:** If a user mentions a general food type or dish without specifics, ask clarifying questions to confirm their preferences or requirements before proceeding. For example, if the user says 'I want to cook a dish,' clarify whether they have a particular recipe or type of cuisine in mind.\n\n"
-    "3. **Step-by-Step Guidance:** Provide instructions one step at a time, ensuring that each step is clear and actionable. Wait for the user to confirm that they have completed the current step before moving on to the next one. Include essential details and tips to make the cooking process smooth and successful.\n\n"
-    "4. **Conciseness and Clarity:** Keep your responses brief, precise, and focused on the current step of the cooking process. Avoid unnecessary verbosity and ensure that each instruction is easy to understand.\n\n"
-    "5. **Relevance and Factual Accuracy:** Generate responses based on factual cooking knowledge and ensure that all advice is relevant to the context of the ongoing conversation. Consider all previous responses and interactions to provide coherent and accurate guidance.\n\n"
-    "6. **Completion Confirmation:** After providing each instruction, explicitly state that the step is complete and ask the user to let you know when they are ready to proceed. For example, 'I have provided the instructions for this step. Let me know when you’re ready to continue.'\n\n"
-    "Follow these guidelines to deliver a professional, helpful, and engaging cooking assistance experience with Chef Mate."
-)
 
-
-if "messages" not in st.session_state:
-    st.session_state.messages = [{'role': 'system', 'content': sys_msg}]
-if "current_chat" not in st.session_state:
-    st.session_state.current_chat = []
-
-def fetch_ai_response(client, input_text):
-    try:
-        st.session_state.messages.append({"role": "user", "content": input_text})
-        chat_completion = client.chat.completions.create(model="gpt-3.5-turbo-1106", messages=st.session_state.messages)
-        response = chat_completion.choices[0].message
-        st.session_state.messages.append(response)
-        return response.content
-    except Exception as e:
-        st.error(f"Error fetching AI response: {str(e)}")
-        return "Sorry, I couldn't process your request."
-
-import tempfile
-def greet(client, text):
-    response = client.audio.speech.create(model="tts-1", voice="onyx", input=text)
-    
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
-        audio_path = tmp_file.name
-        
-        if hasattr(response, 'with_streaming_response'):
-            with response.with_streaming_response() as streaming_response:
-                for chunk in streaming_response.iter_content(chunk_size=1024):
-                    tmp_file.write(chunk)
-        else:
-            tmp_file.write(response.content)
-
-    with open(audio_path, "rb") as audio_file:
-        audio_bytes = audio_file.read()
-    base64_audio = base64.b64encode(audio_bytes).decode("utf-8")
-    audio_html = f'<audio src="data:audio/mp3;base64,{base64_audio}" controls autoplay>'
-    st.markdown(audio_html, unsafe_allow_html=True)
+# def groq_prompt(prompt):
+#     """
+#     Generate a response using GROQ based on the user prompt and optional image context.
+#     """
+#     convo.append({'role': 'user', 'content': prompt})
+#     chat_completion = groq_client.chat.completions.create(messages=convo, model='llama3-70b-8192')
+#     response = chat_completion.choices[0].message
+#     convo.append(response)
+#     return response.content
 
 
 
 
-def speak(client, text, audio_path):
-    try:
-        response = client.audio.speech.create(model="tts-1", voice="onyx", input=text)
-        if hasattr(response, 'with_streaming_response'):
-            with response.with_streaming_response() as streaming_response:
-                with open(audio_path, "wb") as audio_file:
-                    for chunk in streaming_response.iter_content(chunk_size=1024):
-                        audio_file.write(chunk)
-        else:
-            with open(audio_path, "wb") as audio_file:
-                audio_file.write(response.content)
-    except Exception as e:
-        st.error(f"Error generating speech: {str(e)}")
+# def execute_voice_assistant():
+#     # Display initial listening message
+#     listening_text = st.empty()
+#     listening_text.info("I'm **CHEFMATE** 🎙️ Listening...")
+#     start_listening()
 
-def auto_play_audio(audio_file):
-    try:
-        with open(audio_file, "rb") as audio_file:
-            audio_bytes = audio_file.read()
-        base64_audio = base64.b64encode(audio_bytes).decode("utf-8")
-        audio_html = f'<audio src="data:audio/mp3;base64,{base64_audio}" controls autoplay>'
-        st.markdown(audio_html, unsafe_allow_html=True)
-    except Exception as e:
-        st.error(f"Error playing audio: {str(e)}")
+# def speak(text):
+#     player_stream = pyaudio.PyAudio().open(format=pyaudio.paInt16, channels=1, rate=24000, output=True)
+#     stream_start = False
 
-def create_text_card(text, title="Response"):
-    try:
-        # Ensure the text is properly formatted with HTML tags for paragraphs and lists
-        formatted_text = text.replace('\n\n', '<p></p>')  # Double new lines to separate paragraphs
-        formatted_text = formatted_text.replace('\n', '<br>')  # Single new lines to break lines within paragraphs
-        formatted_text = formatted_text.replace('* ', '<li>').replace(' *', '</li>')  # Basic list item handling
-        
-        card_html = f"""
-        <style>
-        .card {{
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            background-color: #ffffff;
-            margin: 10px 0;
-            font-family: 'Arial', sans-serif;
-            border: 1px solid #e0e0e0;
-            transition: box-shadow 0.3s ease-in-out;
-        }}
-        .card:hover {{
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        }}
-        .card-header {{
-            background: linear-gradient(to right, #FF0000, #FF7F00, #FFFF00, #7FFF00, #00FF00, #00FF7F, #00FFFF, #007FFF, #0000FF, #7F00FF, #FF00FF);
-            color: #fff;
-            padding: 10px;
-            border-radius: 10px 10px 0 0;
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }}
-        .card-body {{
-            padding: 15px;
-            font-size: 14px;
-            color: #333;
-            line-height: 1.5;
-            text-align: left;
-            border-top: 1px solid #e0e0e0;
-            font-family: 'Dancing Script', cursive;
-        }}
-        .card-footer {{
-            display: none;
-        }}
-        </style>
-        <div class="card">
-            <div class="card-header">{title}</div>
-            <div class="card-body">
-                {formatted_text}
-            </div>
-        </div>
-        """
-        st.markdown(card_html, unsafe_allow_html=True)
-    except Exception as e:
-        st.error(f"Error creating text card: {str(e)}")
+#     with openai_client.audio.speech.with_streaming_response.create(
+#             model='tts-1',
+#             voice='onyx',
+#             response_format='pcm',
+#             input=text,
+#     ) as response:
+#         silence_threshold = 0.01
+#         for chunk in response.iter_bytes(chunk_size=1024):
+#             if stream_start:
+#                 player_stream.write(chunk)
+#             else:
+#                 if max(chunk) > silence_threshold:
+#                     player_stream.write(chunk)
+#                     stream_start = True
+
+# def wav_to_text(audio_path):
+#     segments, _ = whisper_model.transcribe(audio_path)
+#     text = ''.join(segment.text for segment in segments)
+#     return text
+
+# def callback(recognizer, audio):
+#     prompt_audio_path = 'prompt.wav'
+#     with open(prompt_audio_path, 'wb') as f:
+#         f.write(audio.get_wav_data())
+
+#     prompt_text = wav_to_text(prompt_audio_path)
+#     clean_prompt = extract_prompt(prompt_text, wake_word)
+
+#     if clean_prompt:
+#         print(f'USER: {clean_prompt}')
+#         response = groq_prompt(prompt=clean_prompt)
+
+#         # response = ' '.join(user_input(clean_prompt))
+#         print(f'ASSISTANT: {response}')
+#         speak(response)
+
+
+# def start_listening():
+#     with source as s:
+#         r.adjust_for_ambient_noise(s, duration=2)
+#     st.write(f"\nSay '{wake_word}' followed by your prompt. \n")
+#     r.listen_in_background(source, callback)
+
+#     while True:
+#         time.sleep(0.5)
+
+# def extract_prompt(transcribed_text, wake_word):
+#     pattern = rf'\b{re.escape(wake_word)}[\s,.?!]*([A-Za-z0-9].*)'
+#     match = re.search(pattern, transcribed_text, re.IGNORECASE)
+
+#     if match:
+#         prompt = match.group(1).strip()
+#         return prompt
+#     else:
+#         return None
 
 
 
@@ -364,17 +312,22 @@ def load_image(image_path):
 
 
 
-
-def get_gemini_response(input,image):
-    model=genai.GenerativeModel("gemini-1.5-flash")
-    if input!=" ":
-        response=model.generate_content([input,image])
+def get_gemini_response(input, image):
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    if not input and not image:
+        return "Please provide the input text and image,then i can help you."
+    
+    if input and not image:
+        return "Please provide the image also that you had."
+    elif image and not input.strip():
+        response = model.generate_content(image)
     else:
-        response=model.generate_content(image)
+        response = model.generate_content([input, image])
     return response.text
 
 
-def gemini_repsonse(input,image,prompt):
+
+def gemini_repsonse(prompt,image,input):
     model=genai.GenerativeModel('gemini-1.5-flash')
     response=model.generate_content([input,image[0],prompt])
     return response.text  
@@ -560,7 +513,34 @@ def fix_prep_time(obj):
     else:
         return obj
 
+# Initialize the OpenAI model
 
+
+    
+# def build_prompt(food_category, preparation_time, included_ingredients, excluded_ingredients, description):
+#     return f"""
+#     You are a food advisor. Your task is to recommend recipes based on the following user preferences:
+
+#     Food category: {food_category}
+#     Maximum preparation time: {preparation_time}
+#     Ingredients to include: {included_ingredients}
+#     Ingredients to exclude: {excluded_ingredients}
+#     Description: {description}
+
+#     Provide a list of 5 recipes that best match these preferences. For each recipe, include:
+#     - Name
+#     - Preparation time
+#     - Ingredients (with quantities)
+#     - Instructions
+#     - Nutritional information (carbohydrates, protein, fat, sugar)
+
+#     Format your response as follows:
+#     1. **Name**: [Recipe Name]
+#        - **Preparation time**: [Time]
+#        - **Ingredients**: [List of Ingredients with quantities]
+#        - **Instructions**: [Steps]
+#        - **Nutritional information**: Carbohydrates - [Amount], Protein - [Amount], Fat - [Amount], Sugar - [Amount]
+#     """
 
 def build_prompt(food_category, preparation_time, included_ingredients, excluded_ingredients, description):
     return f"""
@@ -618,19 +598,19 @@ def main():
     "Features",
     [
         ":rainbow[**Home**]",
+        "**Voice Assistant**",
         "**Chat Interaction**",
         "**Recipe Recommendations**",
         "**Nutritional Analyst**",
-        "**Voice Assistant**",
         "**Dish Identification**",
         "**Frequently Asked Questions**"
     ],
     captions=[
         "",
+        "Get step-by-step cooking guidance through voice commands.",
         "Ask questions about recipes and get instant answers.",
         "Enter the ingredients,time,meal etc you have, and Chef Mate will suggest recipes you can make.",
         "Upload images of ingredients or dishes to get detailed nutritional information, including calorie count and other nutritional details, and track total calorie intake.",
-         "Get step-by-step cooking guidance through voice commands.",
         "Upload images of dishes or ingredients, and Chef Mate will help identify them and provide relevant cooking advice.",
         "Get answers to common cooking-related questions and concerns."
     ]
@@ -640,64 +620,23 @@ def main():
     
 
     if feature == ":rainbow[**Home**]":
-        image_path = r"assets/chef.png"
+        image_path = r"assests/chef.png"
         encoded_image = load_image(image_path)
         display_header(encoded_image)
         home()
         display_recipe_tip()
 
     
-       
+
     elif feature == "**Voice Assistant**":
-        st.sidebar.title("API KEY")
-        api_key = st.sidebar.text_input("Enter your OpenAI key", type="password")
-        
-        col1, col2, col3 = st.columns([2, 0.1, 1.8])  # Adjusted column widths
-
-        # Chat history section
+       
+        col1, col2, col3, col4, col5 = st.columns([1, 1, 2, 1, 1])
         with col3:
-            st.markdown(
-                """
-                <style>
-                .chat-history-title {
-                    font-size: 24px;
-                    font-weight: bold;
-                    background: linear-gradient(to right, #FF0000, #FF7F00, #FFFF00, #7FFF00, #00FF00, #00FF7F, #00FFFF, #007FFF, #0000FF, #7F00FF, #FF00FF);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    text-align: center;
-                    margin-bottom: 20px;
-                    padding: 10px 0;
-                }
-                .vertical-line {
-                    border-left: 2px solid #333;
-                    height: 100vh;
-                    margin: 0 20px;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
-            
-            st.markdown('<div class="chat-history-title">Chat History</div>', unsafe_allow_html=True)
-
-            # Create a vertical line for partitioning
-            # st.markdown('<div class="vertical-line"></div>', unsafe_allow_html=True)
-            
-            if "current_chat" not in st.session_state:
-                st.session_state.current_chat = []
-
-            # Display chat history
-            for message in st.session_state.current_chat:
-                create_text_card(message["content"], message["role"].upper())
-
-        # Image and Speak button section
-        with col1:
-            image_path = "assets/achef.png"
+            image_path = "assests/achef.png" 
             encoded_image = load_image(image_path)
-            if encoded_image:
-                display_header(encoded_image)
+            display_header(encoded_image)
 
+            # Center the button below the image
             st.markdown(
                 """
                 <style>
@@ -706,50 +645,32 @@ def main():
                     color: white;
                     padding: 10px 24px;
                     text-align: center;
+                    display: inline-block;
                     font-size: 16px;
-                    margin: 20px auto;
+                    margin: 4px 2px;
                     cursor: pointer;
                     border: none;
                     border-radius: 12px;
-                    display: block;
-                    width: 60%;
                 }
                 .center-button .stButton button:hover {
                     background-color: #45a049;
                 }
                 </style>
-                <div class="center-button">
                 """,
                 unsafe_allow_html=True
             )
            
-            try:
-                if api_key:
-                        client = setup_openai_client(api_key)
-                        if client is None:
-                            return
-                        
-                        recorded_audio = audio_recorder()
-                        if recorded_audio:
-                                    audio_file = "audio.mp3"
-                                    with open(audio_file, "wb") as f:
-                                        f.write(recorded_audio)
-
-                                    transcribed_text = transcribe_audio(client, audio_file)
-                                    if transcribed_text:
-                                        create_text_card(transcribed_text, "USER")
-                                        st.session_state.current_chat.append({"role": "user", "content": transcribed_text})
-
-                                        ai_response = fetch_ai_response(client, transcribed_text)
-                                        response_audio = "audio_res.mp3"
-                                        speak(client, ai_response, response_audio)
-                                        auto_play_audio(response_audio)
-                                        create_text_card(ai_response, "CHEFMATE")
-                                        st.session_state.current_chat.append({"role": "assistant", "content": ai_response})
-            except Exception as e:
-                            st.error(f"An unexpected error occurred: {str(e)}")
-            st.markdown('</div>', unsafe_allow_html=True)
-
+               
+            # with col3:
+            #     st.markdown('<div class="center-button">', unsafe_allow_html=True)
+            #     if st.button("Start Speaking", key="speak_button"):
+                   
+            #         greeting = get_greeting()
+            #         st.session_state.chat_history.append(("Chef Mate", greeting))
+            #         speak(greeting)
+            #         execute_voice_assistant()
+            #     st.markdown('</div>', unsafe_allow_html=True)
+        
         
 
     elif feature == "**Chat Interaction**":
@@ -811,56 +732,77 @@ def main():
 
     elif feature == "**Nutritional Analyst**":
         st.header("🍏 Unlock the secrets to healthier eating with **Chef Mate**!👨‍🍳 Analyze your ingredients and dishes for detailed nutritional insights, track calorie intake, and make every bite count towards a balanced diet. Your journey to mindful eating starts here!")
-        input=st.text_input(" Share additional informations if you have ",key="input")
+        input = st.text_input("Share additional information if you have", key="input")
         uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-        image=""   
+        image = ""   
         if uploaded_file is not None:
             image = Image.open(uploaded_file)
             st.image(image, caption="Uploaded Image.", use_column_width=True)   
-        submit=st.button(" Find Total Calories")
+        submit = st.button("Find Total Calories")
 
-        input_prompt="""
-        You are an expert in nutritionist where you need to see the food items from the image
-                    provide the details of every food items with calories intake and calculate the total calories of entire food,
-                    if the image provide is not having food, say "i am expecting only food related images to provide nutritional information"
-                    in this format
+        input_prompt = """
+            You are a highly skilled nutritionist. You have an image of a meal, and you need to analyze the food items present in the image. For each item, provide the following information:
+            1. Name of the food item
+            2. Estimated calories
+            3. Other nutritional details (if possible)
 
-                    1. Item 1 - no of calories
-                    2. Item 2 - no of calories
-                    ----
-                    ----
+            Finally, calculate the total calories of the entire meal and present it in the following format:
 
-        """
-        if submit:
-            image_data=input_image_setup(uploaded_file)
-            response=gemini_repsonse(input_prompt,image_data,input)
-             # Add CSS for better styling
-            st.markdown("""
-                <style>
-                    .response {
-                        font-family: Arial, sans-serif;
-                        background-color: #f9f9f9;
-                        padding: 20px;
-                        border-radius: 10px;
-                        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-                    }
-                    .response h4 {
-                        color: #007bff;
-                    }
-                    .response p {
-                        color: #333;
-                    }
-                </style>
-            """, unsafe_allow_html=True)
-    
-            # Format the response
-            formatted_response = f"""
-            <div class="response">
-                <h4>Total Calories Calculation</h4>
-                <p>{response}</p>
-            </div>
+            Itemized Nutritional Breakdown:
+            1. [Food Item 1] - [Calories] calories
+            2. [Food Item 2] - [Calories] calories
+            ...
+            n. [Food Item n] - [Calories] calories
+
+            Total Calories: [Total Calories] calories
+
+            Example:
+            Itemized Nutritional Breakdown:
+            1. Apple - 95 calories
+            2. Chicken Breast - 165 calories
+            3. Broccoli - 55 calories
+
+            Total Calories: 315 calories
+
+            Make sure to provide accurate and detailed information.
             """
-            st.markdown(formatted_response, unsafe_allow_html=True)
+
+        if submit:
+            if uploaded_file is not None:
+                try:
+                    image_data = input_image_setup(uploaded_file)
+                    response = gemini_repsonse(input, image_data, input_prompt)
+                    # Add CSS for better styling
+                    st.markdown("""
+                        <style>
+                            .response {
+                                font-family: Arial, sans-serif;
+                                background-color: #f9f9f9;
+                                padding: 20px;
+                                border-radius: 10px;
+                                box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+                            }
+                            .response h4 {
+                                color: #007bff;
+                            }
+                            .response p {
+                                color: #333;
+                            }
+                        </style>
+                    """, unsafe_allow_html=True)
+
+                    # Format the response
+                    formatted_response = f"""
+                    <div class="response">
+                        <h4>Total Calories Calculation</h4>
+                        <p>{response}</p>
+                    </div>
+                    """
+                    st.markdown(formatted_response, unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"Error processing the image: {e}")
+            else:
+                st.error("Please share image, then i can help you.")
             
 
     elif feature == "**Recipe Recommendations**":
