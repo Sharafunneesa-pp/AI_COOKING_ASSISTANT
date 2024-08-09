@@ -41,13 +41,13 @@ import pytz
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 GENAI_API_KEY = st.secrets["GENAI_API_KEY"]
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
-GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+# GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 
 # Configure your clients using the secrets
 genai.configure(api_key=GENAI_API_KEY)
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 genai.configure(api_key=GOOGLE_API_KEY)
-groq_client = Groq(api_key=GROQ_API_KEY)
+# groq_client = Groq(api_key=GROQ_API_KEY)
 llm = ChatOpenAI(api_key=OPENAI_API_KEY, temperature=0.0, max_tokens=3000)
 
 
