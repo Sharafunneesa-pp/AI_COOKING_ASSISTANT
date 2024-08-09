@@ -1,0 +1,2 @@
+[tool.poetry.dependencies]
+pysqlite3-binary = "^0.5.3"
