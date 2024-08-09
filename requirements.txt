@@ -2,4 +2,4 @@ streamlit
 openai
 pydub
 audio_recorder_streamlit
-pysqlite3-binary
+pysqlite3-binary==0.5.3
