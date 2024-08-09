@@ -640,7 +640,8 @@ def main():
     elif feature == "**Voice Assistant**":
         st.sidebar.title("API KEY")
         api_key = st.sidebar.text_input("Enter your OpenAI key", type="password")
-        
+        if st.sidebar.button('New Chat'):
+            st.session_state.current_chat = []
         col1, col2, col3 = st.columns([2, 0.1, 1.8])  # Adjusted column widths
 
         # Chat history section
