@@ -110,11 +110,6 @@ Format your response clearly:
   2. [Step 2]
   3. [Step 3]
   - ...
-- **Nutritional information**: 
-  - Carbohydrates: [Amount in grams]
-  - Protein: [Amount in grams]
-  - Fat: [Amount in grams]
-  - Sugar: [Amount in grams]
 
 Ensure that each section is separated by a newline and clearly formatted.
 
@@ -548,7 +543,7 @@ def home():
 
     #### Features
 
-    * **Voice Interaction:** Get step-by-step cooking guidance through voice commands.
+    * **Voice Interaction:** Get step-by-step cooking guidance through voice commands - Multilanguage assistance!.
     * **Chat Interaction:** Ask questions about recipes and get instant answers.
     * **Recipe Recommendations:** Enter the ingredients you have, and Chef Mate will suggest recipes you can make.
     * **Dish Identification:** Upload images of dishes or ingredients, and Chef Mate will help identify them and provide relevant cooking advice and recipes.
@@ -558,9 +553,8 @@ def home():
     #### Upcoming Features
 
     Chef Mate is continuously evolving to offer more exciting features. Stay tuned for:
-    - Enhanced personalized recipe vedio recommendations based on dietary preferences.
+    - Enhanced personalized recipe video recommendations based on dietary preferences.
     - Integration with smart kitchen appliances for an even smoother cooking experience.
-    - Multilanguage assistance!
     """)
 
 
