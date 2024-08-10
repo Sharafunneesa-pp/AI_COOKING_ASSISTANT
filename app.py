@@ -657,11 +657,113 @@ def main():
 
     
        
+    # elif feature == "**Voice Assistant**":
+    #     st.sidebar.title("API KEY")
+    #     api_key = st.sidebar.text_input("Enter your OpenAI key", type="password")
+    #     if st.sidebar.button('New Chat'):
+    #         st.session_state.current_chat = []
+    #     col1, col2, col3 = st.columns([2, 0.1, 1.8])  # Adjusted column widths
+
+    #     # Chat history section
+    #     with col3:
+    #         st.markdown(
+    #             """
+    #             <style>
+    #             .chat-history-title {
+    #                 font-size: 24px;
+    #                 font-weight: bold;
+    #                 background: linear-gradient(to right, #FF0000, #FF7F00, #FFFF00, #7FFF00, #00FF00, #00FF7F, #00FFFF, #007FFF, #0000FF, #7F00FF, #FF00FF);
+    #                 -webkit-background-clip: text;
+    #                 -webkit-text-fill-color: transparent;
+    #                 text-align: center;
+    #                 margin-bottom: 20px;
+    #                 padding: 10px 0;
+    #             }
+    #             .vertical-line {
+    #                 border-left: 2px solid #333;
+    #                 height: 100vh;
+    #                 margin: 0 20px;
+    #             }
+    #             </style>
+    #             """,
+    #             unsafe_allow_html=True
+    #         )
+            
+    #         st.markdown('<div class="chat-history-title">Chat History</div>', unsafe_allow_html=True)
+
+    #         # Create a vertical line for partitioning
+    #         # st.markdown('<div class="vertical-line"></div>', unsafe_allow_html=True)
+            
+    #         if "current_chat" not in st.session_state:
+    #             st.session_state.current_chat = []
+
+    #         # Display chat history
+    #         for message in st.session_state.current_chat:
+    #             create_text_card(message["content"], message["role"].upper())
+
+    #     # Image and Speak button section
+    #     with col1:
+    #         image_path = "assets/achef.png"
+    #         encoded_image = load_image(image_path)
+    #         if encoded_image:
+    #             display_header(encoded_image)
+
+    #         st.markdown(
+    #             """
+    #             <style>
+    #             .center-button .stButton button {
+    #                 background-color: #4CAF50;
+    #                 color: white;
+    #                 padding: 10px 24px;
+    #                 text-align: center;
+    #                 font-size: 16px;
+    #                 margin: 20px auto;
+    #                 cursor: pointer;
+    #                 border: none;
+    #                 border-radius: 12px;
+    #                 display: block;
+    #                 width: 60%;
+    #             }
+    #             .center-button .stButton button:hover {
+    #                 background-color: #45a049;
+    #             }
+    #             </style>
+    #             <div class="center-button">
+    #             """,
+    #             unsafe_allow_html=True
+    #         )
+           
+    #         try:
+    #             if api_key:
+    #                     client = setup_openai_client(api_key)
+    #                     if client is None:
+    #                         return
+                        
+    #                     recorded_audio = audio_recorder()
+    #                     if recorded_audio:
+    #                                 audio_file = "audio.mp3"
+    #                                 with open(audio_file, "wb") as f:
+    #                                     f.write(recorded_audio)
+
+    #                                 transcribed_text = transcribe_audio(client, audio_file)
+    #                                 if transcribed_text:
+    #                                     create_text_card(transcribed_text, "USER")
+    #                                     st.session_state.current_chat.append({"role": "user", "content": transcribed_text})
+
+    #                                     ai_response = fetch_ai_response(client, transcribed_text)
+    #                                     response_audio = "audio_res.mp3"
+    #                                     speak(client, ai_response, response_audio)
+    #                                     auto_play_audio(response_audio)
+    #                                     create_text_card(ai_response, "CHEFMATE")
+    #                                     st.session_state.current_chat.append({"role": "assistant", "content": ai_response})
+    #         except Exception as e:
+    #                         st.error(f"An unexpected error occurred: {str(e)}")
+    #         st.markdown('</div>', unsafe_allow_html=True)
+
     elif feature == "**Voice Assistant**":
-        st.sidebar.title("API KEY")
-        api_key = st.sidebar.text_input("Enter your OpenAI key", type="password")
-        if st.sidebar.button('New Chat'):
-            st.session_state.current_chat = []
+        # st.sidebar.title("API KEY")
+        # api_key = st.sidebar.text_input("Enter your OpenAI key", type="password")
+        client = OpenAI(api_key=OPENAI_API_KEY)
         col1, col2, col3 = st.columns([2, 0.1, 1.8])  # Adjusted column widths
 
         # Chat history section
@@ -734,33 +836,27 @@ def main():
             )
            
             try:
-                if api_key:
-                        client = setup_openai_client(api_key)
-                        if client is None:
-                            return
-                        
-                        recorded_audio = audio_recorder()
-                        if recorded_audio:
-                                    audio_file = "audio.mp3"
-                                    with open(audio_file, "wb") as f:
-                                        f.write(recorded_audio)
+                recorded_audio = audio_recorder()
+                if recorded_audio:
+                    audio_file = "audio.mp3"
+                    with open(audio_file, "wb") as f:
+                        f.write(recorded_audio)
 
-                                    transcribed_text = transcribe_audio(client, audio_file)
-                                    if transcribed_text:
-                                        create_text_card(transcribed_text, "USER")
-                                        st.session_state.current_chat.append({"role": "user", "content": transcribed_text})
+                    transcribed_text = transcribe_audio(client, audio_file)
+                    if transcribed_text:
+                        create_text_card(transcribed_text, "USER")
+                        st.session_state.current_chat.append({"role": "user", "content": transcribed_text})
 
-                                        ai_response = fetch_ai_response(client, transcribed_text)
-                                        response_audio = "audio_res.mp3"
-                                        speak(client, ai_response, response_audio)
-                                        auto_play_audio(response_audio)
-                                        create_text_card(ai_response, "CHEFMATE")
-                                        st.session_state.current_chat.append({"role": "assistant", "content": ai_response})
+                        ai_response = fetch_ai_response(client, transcribed_text)
+                        response_audio = "audio_res.mp3"
+                        speak(client, ai_response, response_audio)
+                        auto_play_audio(response_audio)
+                        create_text_card(ai_response, "CHEFMATE")
+                        st.session_state.current_chat.append({"role": "assistant", "content": ai_response})
             except Exception as e:
                             st.error(f"An unexpected error occurred: {str(e)}")
             st.markdown('</div>', unsafe_allow_html=True)
-
-        
+                        
 
     elif feature == "**Chat Interaction**":
         if "messages" not in st.session_state:
