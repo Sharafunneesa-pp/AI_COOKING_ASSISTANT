@@ -227,7 +227,7 @@ def transcribe_audio(client, audio_path):
             else:
                 return 'Transcription text not found'
     except Exception as e:
-        st.error(f" Your audio is too short.")
+        st.error(f"HI I'm CHEFMATE . How could i assist you today in kitchen? ")
         return None
 
 
@@ -763,6 +763,8 @@ def main():
     elif feature == "**Voice Assistant**":
         # st.sidebar.title("API KEY")
         # api_key = st.sidebar.text_input("Enter your OpenAI key", type="password")
+        if st.sidebar.button('New Chat'):
+            st.session_state.current_chat = []
         client = OpenAI(api_key=OPENAI_API_KEY)
         col1, col2, col3 = st.columns([2, 0.1, 1.8])  # Adjusted column widths
 
