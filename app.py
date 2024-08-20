@@ -80,7 +80,7 @@ def load_documents(data):
 
 def get_conversational_chain():
     prompt_template="""You are an AI-powered cooking assistant designed to help users with their cooking tasks.
-    Your role is to provide friendly, step-by-step instructions for recipes, suggest ingredient substitutions, suggest recipe , offer cooking tips, troubleshoot cooking issues, and motivate users throughout the cooking process. 
+    Your role is to provide friendly, step-by-step instructions for recipes, suggest ingredient substitutions, suggest recipe (before generating confirm with food), offer cooking tips, troubleshoot cooking issues, and motivate users throughout the cooking process. 
     Ensure that users feel supported and confident while cooking.always consider previous question while generating new one.
 
 **Tasks:**
