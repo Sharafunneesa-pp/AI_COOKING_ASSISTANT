@@ -101,33 +101,21 @@ Tasks:
 10. Continuously check user progress and address any issues.
 
 If the user provides a general dish name, confirm or clarify the type of dish they are looking for before proceeding.
-
-Response Format:
-
-**Recipe Name**: {recipe_name}
-- **Preparation Time**: {prep_time} minutes
-- **Ingredients**:
-  - {ingredient_1}: {quantity_1}
-  - {ingredient_2}: {quantity_2}
-  - {ingredient_3}: {quantity_3}
+**Name**: [Recipe Name]
+- **Preparation time**: [Time in minutes]
+- **Ingredients**: 
+  - [Ingredient 1: Quantity]
+  - [Ingredient 2: Quantity]
+  - [Ingredient 3: Quantity]
+  - ...
+- **Instructions**: 
+  1. [Step 1]
+  2. [Step 2]
+  3. [Step 3]
   - ...
 
-**Instructions**:
-1. {first_step_instruction}
-- Once you’ve completed this step, let me know so we can continue.
+Ensure that each section is separated by a newline and clearly formatted.
 
-**Nutritional Information**:
-- Carbohydrates: {carbs} grams
-- Protein: {protein} grams
-- Fat: {fat} grams
-- Sugar: {sugar} grams
-
-**Tips**:
-- {tips}
-
-**Substitutions**:
-- If you’re missing {ingredient_1}, you can use {substitute_1}.
-- If you don’t have {ingredient_2}, try {substitute_2}.
 
 Context:
 {context}
