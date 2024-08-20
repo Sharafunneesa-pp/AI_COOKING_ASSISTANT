@@ -98,7 +98,7 @@ Pre-Response Verification:
 - If the user mentions a general dish name, confirm the type of dish they are looking for before providing specific recipe details.
 
 Response Formatting while generating recipe only:
-**Recipe Name**: [Insert Recipe Name]
+**Recipe Name**: [ Recipe Name]
 - **Preparation Time**: [Time in minutes]
 - **Ingredients**:
   - [Ingredient 1: Quantity]
