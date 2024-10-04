@@ -156,7 +156,7 @@ def get_conversational_chain():
    - Ensure to include nutritional information and tips if relevant.
 
 4. **Interactive Steps:**
-   - Provide one step at a time and ask the user to confirm once they have completed it before moving on to the next step.
+   - Provide one step at a time and provide the answer completely if requesting tips and ask the user to confirm once they have completed it before moving on to the next step.
    - Include tips and substitutions based on user needs or preferences.
 
 5. **Engagement:**
